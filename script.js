@@ -1,3 +1,84 @@
+// Theme Management
+let currentTheme = localStorage.getItem('theme') || 'light';
+
+// Initialize theme on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTheme();
+});
+
+function initializeTheme() {
+    const body = document.body;
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = themeToggle.querySelector('i');
+    
+    // Set initial theme
+    body.setAttribute('data-theme', currentTheme);
+    
+    // Update theme toggle icon
+    if (currentTheme === 'dark') {
+        themeIcon.className = 'fas fa-sun';
+        themeToggle.title = 'Switch to Light Mode';
+    } else {
+        themeIcon.className = 'fas fa-moon';
+        themeToggle.title = 'Switch to Dark Mode';
+    }
+}
+
+function toggleTheme() {
+    const body = document.body;
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = themeToggle.querySelector('i');
+    
+    // Toggle theme
+    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    // Apply theme
+    body.setAttribute('data-theme', currentTheme);
+    
+    // Update icon and title
+    if (currentTheme === 'dark') {
+        themeIcon.className = 'fas fa-sun';
+        themeToggle.title = 'Switch to Light Mode';
+    } else {
+        themeIcon.className = 'fas fa-moon';
+        themeToggle.title = 'Switch to Dark Mode';
+    }
+    
+    // Save theme preference
+    localStorage.setItem('theme', currentTheme);
+    
+    // Show notification
+    showNotification(`Switched to ${currentTheme} mode`, 'info');
+}
+
+function toggleMobileMenu() {
+    const navMenu = document.getElementById('nav-menu');
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+    
+    navMenu.classList.toggle('active');
+    menuToggle.classList.toggle('active');
+}
+
+// Close mobile menu when clicking on nav links
+function closeMobileMenu() {
+    const navMenu = document.getElementById('nav-menu');
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+    
+    navMenu.classList.remove('active');
+    menuToggle.classList.remove('active');
+}
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', function(event) {
+    const navMenu = document.getElementById('nav-menu');
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+    
+    if (!navMenu.contains(event.target) && !menuToggle.contains(event.target)) {
+        navMenu.classList.remove('active');
+        menuToggle.classList.remove('active');
+    }
+});
+
 // Firebase Database Functions
 let isFirebaseReady = false;
 let firebaseListeners = {};
@@ -438,6 +519,7 @@ function showStudentDashboard() {
     setActiveNav('student-nav');
     loadJobs();
     checkShortlistedBanner();
+    closeMobileMenu();
     loadNotifications();
 }
 
@@ -449,6 +531,7 @@ function showAdminLogin() {
         document.getElementById('admin-login').classList.add('active');
         setActiveNav('admin-nav');
     }
+    closeMobileMenu();
 }
 
 function showAdminDashboard() {
@@ -462,6 +545,7 @@ function showShortlistedView() {
     hideAllPages();
     document.getElementById('shortlisted-view').classList.add('active');
     setActiveNav('shortlisted-nav');
+    closeMobileMenu();
     
     // Update global shortlisted data from job-specific data
     updateGlobalShortlistedData();
@@ -2148,6 +2232,28 @@ function loadNotifications() {
             message: 'Check this section regularly for important updates about placements and shortlisted candidates.',
             time: new Date().toISOString()
         });
+        
+        addNotification({
+            type: 'success',
+            title: 'New Job Opening: Software Engineer',
+            message: 'TechCorp is hiring for Software Engineer position. Application deadline: 15 Dec 2024, 11:59 PM',
+            time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+            action: {
+                text: 'View Details',
+                callback: () => showStudentDashboard()
+            }
+        });
+        
+        addNotification({
+            type: 'success',
+            title: 'Shortlist Updated!',
+            message: '25 candidates have been shortlisted for the Software Engineer position at TechCorp.',
+            time: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+            action: {
+                text: 'View Shortlist',
+                callback: () => showShortlistedView()
+            }
+        });
     }
     
     displayNotifications();
@@ -2246,8 +2352,25 @@ function getNotificationIcon(type) {
 }
 
 function getTimeAgo(timestamp) {
+    if (!timestamp) return 'Just now';
+    
     const now = new Date();
-    const time = new Date(timestamp);
+    let time;
+    
+    // Handle different timestamp formats
+    if (typeof timestamp === 'string') {
+        time = new Date(timestamp);
+    } else if (typeof timestamp === 'number') {
+        time = new Date(timestamp);
+    } else {
+        time = new Date();
+    }
+    
+    // Check if the date is valid
+    if (isNaN(time.getTime())) {
+        return 'Just now';
+    }
+    
     const diffInMs = now - time;
     const diffInMins = Math.floor(diffInMs / (1000 * 60));
     const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
